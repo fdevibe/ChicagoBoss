@@ -760,33 +760,19 @@ execute_action({Controller, Action, Tokens} = Location, AppInfo, Req, SessionID,
                 OtherInfo ->
                     OtherInfo
             end,
-            InjectVars = case proplists:get_value("inject_vars_", ExportStrings) of
-                1 ->
-                    ControllerInstance:inject_vars_();
-                3 ->
-                    ControllerInstance:inject_vars_(Req, SessionID);
-                _ ->
-                    []
-            end,
             case AuthInfo of
                 {ok, Info} ->
                     EffectiveRequestMethod = case Req:request_method() of
                         'HEAD' -> 'GET';
                         Method -> Method
                     end,
-                    ActionResult = case proplists:get_value(Action, ExportStrings) of
+                   ActionResult = case proplists:get_value(Action, ExportStrings) of
                         3 ->
                             ActionAtom = list_to_atom(Action),
-                            inject_extra_vars(
-                              ControllerInstance:ActionAtom(
-                                EffectiveRequestMethod, Tokens),
-                              InjectVars);
+                            ControllerInstance:ActionAtom(EffectiveRequestMethod, Tokens);
                         4 ->
                             ActionAtom = list_to_atom(Action),
-                            inject_extra_vars(
-                              ControllerInstance:ActionAtom(
-                                EffectiveRequestMethod, Tokens, Info),
-                              InjectVars);
+                            ControllerInstance:ActionAtom(EffectiveRequestMethod, Tokens, Info);
                         _ ->
                             undefined
                     end,
@@ -821,19 +807,6 @@ execute_action({Controller, Action, Tokens} = Location, AppInfo, Req, SessionID,
                     {redirect, process_redirect(Controller, Where, AppInfo)}
             end
     end.
-
-inject_extra_vars({ok, Data}, InjectVars) ->
-    {ok, Data ++ InjectVars};
-inject_extra_vars({ok, Data, L}, InjectVars) ->
-    {ok, Data ++ InjectVars, L};
-inject_extra_vars({render_other, OtherLocation}, InjectVars) ->
-    {render_other, OtherLocation, InjectVars};
-inject_extra_vars({render_other, OtherLocation, Data}, InjectVars) ->
-    {render_other, OtherLocation, Data ++ InjectVars};
-inject_extra_vars({render_other, OtherLocation, Data, Headers}, InjectVars) ->
-    {render_other, OtherLocation, Data ++ InjectVars, Headers};
-inject_extra_vars(Result, _) ->
-    Result.
 
 process_location(Controller,  [{_, _}|_] = Where, AppInfo) ->
     {_, TheController, TheAction, CleanParams} = process_redirect(Controller, Where, AppInfo),
