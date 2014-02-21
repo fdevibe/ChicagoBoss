@@ -10,7 +10,7 @@
 
 -export([render_view/5]).
 
--include("boss_web.hrl").
+-include_lib("boss_web.hrl").
 -type action_results() :: 'render'|render_other|redirect| js| json| jsonp| output.
 
 -spec apply_middle_filters(atom() | tuple(),_,_,_) -> any().
@@ -27,7 +27,7 @@
 -spec render_view({_,_,_},_,[any()]) -> any().
 -spec render_view({_,_,_},_,[any()],[]) -> any().
 -spec render_view({_,_,_},_,[any()],_,_) -> any().
--spec render_with_template(_,_,#boss_app_info{application::atom()},[any()],_,_,atom() | tuple(),[any()],_,_,atom() | tuple()) -> any().
+-spec render_with_template(_,_,#boss_app_info{application::atom()},[any()],_,_,atom() | tuple(),[any()],_,atom() | tuple()) -> any().
 -spec translation_coverage(_,_,_) -> float().
 
 %% @desc generates HTML output for errors. called from process_error/5
@@ -206,12 +206,11 @@ render_view({Controller, Template, _}, AppInfo, RequestContext, Variables, Heade
  
     LoadResult		= load_result(Controller, Template, AppInfo, TryExtensions),
     BossFlash		= boss_flash:get_and_clear(SessionID),
-    SessionData		= boss_session:get_session_data(SessionID),
     case LoadResult of
         {ok, Module, TemplateAdapter} ->
             render_with_template(Controller, Template, AppInfo, RequestContext,
                                  Variables, Headers, Req, BossFlash,
-                                 SessionData, Module, TemplateAdapter);
+                                 Module, TemplateAdapter);
         {error, not_found} ->
             AnyViewPath = boss_files_util:web_view_path(Controller, Template, "{" ++ string:join(TryExtensions, ",") ++ "}"),
             {not_found, io_lib:format("The requested template (~p) was not found.~n If you controller did not run, check that it was exported~n~n", [AnyViewPath]) };
@@ -226,7 +225,7 @@ render_view({Controller, Template, _}, AppInfo, RequestContext, Variables, Heade
     end.
 
 render_with_template(Controller, Template, AppInfo, RequestContext,
-                     Variables, Headers, Req, BossFlash, SessionData, Module,
+                     Variables, Headers, Req, BossFlash, Module,
                      TemplateAdapter) ->
     TranslatableStrings    = TemplateAdapter:translatable_strings(Module),
     {Lang, TranslationFun} = choose_translation_fun(AppInfo#boss_app_info.translator_pid,
@@ -237,10 +236,10 @@ render_with_template(Controller, Template, AppInfo, RequestContext,
                      AuthInfo -> [{"_before", AuthInfo}]
                  end,
     RenderVars = BossFlash
-        ++ BeforeVars
-        ++ [{"_lang", Lang}, {"_session", SessionData},
-            {"_req", Req}, {"_base_url", AppInfo#boss_app_info.base_url} | Variables]
-        ++ get_template_context_variables(RequestContext, Lang, AppInfo, Variables, BeforeVars),
+        ++ [{"_lang", Lang}]
+        ++ get_template_context_variables(RequestContext, Lang, AppInfo, Variables, BeforeVars)
+        ++ Variables,
+    lager:debug("RenderVars: ~p", [RenderVars]),
     case TemplateAdapter:render(Module, [{"_vars", RenderVars}|RenderVars],
             [{translation_fun, TranslationFun}, {locale, Lang},
                 {host, Req:header(host)}, {application, atom_to_list(AppInfo#boss_app_info.application)},
@@ -264,13 +263,19 @@ get_template_context_variables([ModuleName|Rest], RequestContext, Lang, AppInfo,
       fun({module_info, _}, Acc) ->
               Acc;
          ({Fun, Arity}, Acc) ->
-              case Arity of
-                  0 ->
-                      [Module:Fun()|Acc];
-                  1 ->
-                      [Module:Fun(RequestContext)|Acc];
-                  5 ->
-                      [Module:Fun(RequestContext, Lang, AppInfo, Variables, BeforeVars)|Acc]
+              VarDef = case Arity of
+                           0 ->
+                               Module:Fun();
+                           1 ->
+                               Module:Fun(RequestContext);
+                           5 ->
+                               Module:Fun(RequestContext, Lang, AppInfo, Variables, BeforeVars)
+                       end,
+              case VarDef of
+                  {_Var, _Def} ->
+                      [VarDef|Acc];
+                  _ ->
+                      Acc
               end
       end,
       [],

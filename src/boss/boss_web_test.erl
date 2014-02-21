@@ -4,7 +4,7 @@
 -export([follow_link/4, follow_redirect/3, submit_form/5]).
 -export([find_link_with_text/2]).
 
--include("boss_web.hrl").
+-include_lib("boss_web.hrl").
 
 start([Application]) ->
     start([Application, "mock"]);

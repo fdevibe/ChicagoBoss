@@ -1,7 +1,7 @@
 -module(boss_files_test).
 
 -include_lib("eunit/include/eunit.hrl").
--include("../src/boss/boss_web.hrl").
+-include_lib("boss_web.hrl").
 
 make_extentions_test() ->
     Extentions		= boss_files:make_extentions(),

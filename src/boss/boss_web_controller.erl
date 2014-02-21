@@ -9,7 +9,7 @@
 
 -export([execute_action/4, filter_config/1, filters_for_function/1]).
 
--include("boss_web.hrl").
+-include_lib("boss_web.hrl").
 
 start_link() ->
     init_master_node().

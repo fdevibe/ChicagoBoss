@@ -15,7 +15,7 @@
         module_is_loaded/1,
         reload_all/0
     ]).
--include("boss_web.hrl").
+-include_lib("boss_web.hrl").
 
 -ifdef(TEST).
 -compile(export_all).
@@ -219,7 +219,7 @@ load_dirs1([Dir|Rest], Application, OutDir, Compiler, ModuleAcc, ErrorAcc) ->
 load_dir(Dir, Application, OutDir, Compiler) when is_function(Compiler) ->
     Files     = list_files(Dir),
     FullFiles = lists:map(fun(F) -> filename:join([Dir, F]) end, Files),
-    
+
     {ModuleList, ErrorList} = compile_and_accumulate_errors(
         FullFiles, Application, OutDir, Compiler, {[], []}),
     

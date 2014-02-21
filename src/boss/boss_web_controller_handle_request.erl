@@ -8,7 +8,7 @@
 -compile(export_all).
 -endif.
 
--include("boss_web.hrl").
+-include_lib("boss_web.hrl").
 
 %% TODO REFACTOR AND TEST
 handle_request(Req, RequestMod, ResponseMod) ->

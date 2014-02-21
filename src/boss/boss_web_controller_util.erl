@@ -8,7 +8,7 @@
 
 -export([execution_mode/1]).
 
--include("boss_web.hrl").
+-include_lib("boss_web.hrl").
 
 -spec execution_mode(types:application()) -> types:execution_mode().
 -spec find_application_for_path('undefined' | binary() | maybe_improper_list(binary() | maybe_improper_list(any(),binary() | []) | char(),binary() | []),_,[any()]) -> any().
