@@ -6,6 +6,7 @@
                     init_file_list/1, language_list/1, mail_controller_path/0,
         model_list/1,
         lib_module_list/1,
+        template_context_module_list/1,
         routes_file/1,
         root_priv_dir/1, view_file_list/0,
                                                         view_module_list/1,
@@ -103,6 +104,14 @@ lib_module_list(AppName) ->
             boss_files_util:module_list(AppName, boss_files_util:lib_path());
         false ->
             lists:map(fun atom_to_list/1, boss_env:get_env(AppName, lib_modules, []))
+    end.
+
+template_context_module_list(AppName) ->
+    case boss_env:is_developing_app(AppName) of
+        true ->
+            boss_files_util:module_list(AppName, boss_files_util:template_context_path());
+        false ->
+            lists:map(fun atom_to_list/1, boss_env:get_env(AppName, template_context_modules, []))
     end.
 
 web_controller_list(AppName) when is_list(AppName) ->

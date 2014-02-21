@@ -236,8 +236,11 @@ render_with_template(Controller, Template, AppInfo, RequestContext,
                      undefined -> [];
                      AuthInfo -> [{"_before", AuthInfo}]
                  end,
-    RenderVars = BossFlash ++ BeforeVars ++ [{"_lang", Lang}, {"_session", SessionData},
-                                             {"_req", Req}, {"_base_url", AppInfo#boss_app_info.base_url} | Variables],
+    RenderVars = BossFlash
+        ++ BeforeVars
+        ++ [{"_lang", Lang}, {"_session", SessionData},
+            {"_req", Req}, {"_base_url", AppInfo#boss_app_info.base_url} | Variables]
+        ++ get_template_context_variables(RequestContext, Lang, AppInfo, Variables, BeforeVars),
     case TemplateAdapter:render(Module, [{"_vars", RenderVars}|RenderVars],
             [{translation_fun, TranslationFun}, {locale, Lang},
                 {host, Req:header(host)}, {application, atom_to_list(AppInfo#boss_app_info.application)},
@@ -248,6 +251,31 @@ render_with_template(Controller, Template, AppInfo, RequestContext,
         Err ->
             Err
     end.
+
+get_template_context_variables(RequestContext, Lang, AppInfo, Variables, BeforeVars) ->
+    get_template_context_variables(
+      boss_files:template_context_module_list(AppInfo#boss_app_info.application),
+      RequestContext, Lang, AppInfo, Variables, BeforeVars).
+get_template_context_variables([], _RequestContext, _Lang, _AppInfo, _Variables, _BeforeVars) ->
+    [];
+get_template_context_variables([ModuleName|Rest], RequestContext, Lang, AppInfo, Variables, BeforeVars) ->
+    Module = list_to_atom(ModuleName),
+    lists:foldr(
+      fun({module_info, _}, Acc) ->
+              Acc;
+         ({Fun, Arity}, Acc) ->
+              case Arity of
+                  0 ->
+                      [Module:Fun()|Acc];
+                  1 ->
+                      [Module:Fun(RequestContext)|Acc];
+                  5 ->
+                      [Module:Fun(RequestContext, Lang, AppInfo, Variables, BeforeVars)|Acc]
+              end
+      end,
+      [],
+     proplists:get_value(exports, Module:module_info())
+     ) ++ get_template_context_variables(Rest, RequestContext, Lang, AppInfo, Variables, BeforeVars).
 
 load_result(Controller, Template, AppInfo, TryExtensions) ->
     lists:foldl(fun

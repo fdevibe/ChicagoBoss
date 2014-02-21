@@ -11,6 +11,7 @@
         load_view_if_dev/4,
         load_view_lib_modules/1,
         load_web_controllers/1,
+        load_template_context/1,
         module_is_loaded/1,
         reload_all/0
     ]).
@@ -74,6 +75,7 @@ make_ops_list(TranslatorPid) ->
      {controller_modules,      fun load_web_controllers/2		},
      {model_modules,	       fun load_models/2			},
      {view_lib_helper_modules, fun load_view_lib_modules/2		},
+     {template_context_modules, fun load_template_context/2		},
      {view_lib_tags_modules,      load_view_lib(_, _, TranslatorPid)	},
      {view_modules,               load_views(_, _,    TranslatorPid)	}].
     
@@ -153,6 +155,11 @@ load_view_lib_modules(Application) ->
     load_view_lib_modules(Application, undefined).
 load_view_lib_modules(Application, OutDir) ->
     load_dirs(boss_files_util:view_helpers_path(), Application, OutDir, fun compile/2).
+
+load_template_context(Application) ->
+    load_template_context(Application, undefined).
+load_template_context(Application, OutDir) ->
+    load_dirs(boss_files_util:template_context_path(), Application, OutDir, fun compile/2).
 
 load_models(Application) ->
     load_models(Application, undefined).

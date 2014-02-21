@@ -61,6 +61,8 @@
 
 -export([template_adapters/0]).
 
+-export([template_context_path/0]).
+
 -type input_string() :: string().
 
 
@@ -126,6 +128,9 @@ view_filter_helper_path() -> filename:join([view_lib_path(), "filter_modules"]).
 
 view_html_tags_path() -> filename:join([view_lib_path(), "tag_html"]).
 -spec view_helpers_path() -> [input_string(),...].
+
+-spec template_context_path() -> [input_string(),...].
+template_context_path() -> [filename:join([view_lib_path(), "template_context_modules"])].
 
 view_helpers_path() -> [view_tag_helper_path(), view_filter_helper_path()].
 -spec module_list(_,[input_string(),...]) -> [any()].
